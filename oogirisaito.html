@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大喜利サイト</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #fff;
+    }
+    header {
+      background-color: #fff;
+      color: #000;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    .dropdown {
+      position: relative;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: #fff;
+      min-width: 150px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+    .dropdown-content button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background-color: white;
+      text-align: left;
+    }
+    .dropdown-content button:hover {
+      background-color: #f1f1f1;
+    }
+    .container {
+      padding: 1rem;
+    }
+    .odai {
+      font-size: 1.2rem;
+      margin: 1rem 0;
+      padding: 0.5rem;
+      background-color: #e9ecef;
+      border-radius: 5px;
+    }
+    .boke {
+      background-color: #fff;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .boke .meta {
+      font-size: 0.8rem;
+      color: #666;
+    }
+    .like-button {
+      color: #007bff;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    .liked {
+      font-weight: bold;
+      color: red;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+      border-radius: 5px;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      margin-top: 0.5rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>大喜利サイト</h1>
+    <div class="dropdown">
+      <span>
+<span id="menuToggle" style="cursor: pointer;">☰</span>
+      <div class="dropdown-content">
+        <button onclick="openLoginModal()">ログイン / 新規登録</button>
+        <button onclick="logout()">ログアウト</button>
+        <div id="current-user" style="padding: 0.5rem;"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="odai" id="odaiDisplay">お題を読み込み中...</div>
+<div class="form-group">
+  <label for="odaiSelect">お題を選ぶ：</label>
+  <select id="odaiSelect" onchange="changeOdai()">
+    <!-- JSでお題をここに入れます -->
+  </select>
+</div>
+    <!-- <button onclick="resetUsers()">ユーザーを初期化</button> -->
+
+    <button onclick="showRandomOdai()">ランダムでお題を表示</button>
+    <div class="form-group">
+      <input type="text" id="newOdaiInput" placeholder="お題を追加">
+      <button onclick="addOdai()">追加</button>
+    </div>
+    <div id="odaiListContainer"></div>
+    <hr>
+    <div class="form-group">
+      <input type="text" id="bokeInput" placeholder="ボケを入力">
+      <button onclick="addBoke()">投稿</button>
+    </div>
+    <div id="bokeListContainer"></div>
+  </div>
+<div id="adminTools" style="display: none;">
+  <h3>お題の管理</h3>
+  <div id="adminOdaiList"></div>
+<div id="likeRankingContainer" style="padding: 1rem;"></div>
+
+
+</div>
+
+  <!-- モーダル：ログイン -->
+  <div id="loginModal" class="modal">
+  <div class="modal-content">
+    <span class="close-button" onclick="closeModal('loginModal')">&times;</span>
+<style>
+  .modal-content {
+    position: relative;
+    background-color: white;
+    padding: 20px;
+    width: 400px;
+    margin: 100px auto;
+    border-radius: 8px;
+  }
+
+  .close-button {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .modal {
+    display: none; 
+    position: fixed;
+    z-index: 999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+</style>
+<script>
+  function closeModal(modalId) {
+    document.getElementById(modalId).style.display = "none";
+  }
+</script>
+
+
+    <h2>ログイン</h2>
+    <div class="form-group">
+      <label for="loginUsername">ユーザー名</label>
+      <input type="text" id="loginUsername">
+    </div>
+    <div class="form-group">
+      <label for="loginPassword">パスワード</label>
+      <input type="password" id="loginPassword">
+    </div>
+    <button onclick="login()">ログイン</button>
+    <p>アカウントがない方は <a href="#" onclick="switchToRegister()">新規登録</a></p>
+  </div>
+</div>
+
+  <div id="registerModal" class="modal">
+  <div class="modal-content">
+    <span class="close-button" onclick="closeModal('registerModal')">&times;</span>
+<style>
+  .close-button {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .modal-content {
+    position: relative; 
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    width: 400px;
+    margin: 100px auto;
+  }
+</style>
+<script>
+  function closeModal(modalId) {
+    document.getElementById(modalId).style.display = "none";
+  }
+</script>
+    <h2>新規登録</h2>
+    <form onsubmit="register(); return false;">
+      <div class="form-group">
+        <label for="registerUsername">ユーザー名</label>
+        <input type="text" id="registerUsername" required>
+      </div>
+      <div class="form-group">
+        <label for="registerPassword">パスワード</label>
+        <input type="password" id="registerPassword" required>
+      </div>
+      <button type="submit">登録</button>
+    </form>
+    <p>すでにアカウントをお持ちの方は <a href="#" onclick="switchToLogin()">ログイン</a></p>
+  </div>
+</div>
+
+
+  <script>
+   
+    let odaiList = JSON.parse(localStorage.getItem('odaiList')) || [];
+    let bokeList = JSON.parse(localStorage.getItem('bokeList')) || [];
+    let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+    let storedOdai = localStorage.getItem('currentOdai');
+    let currentOdai =
+      (storedOdai && storedOdai !== 'undefined')
+        ? storedOdai
+        : (odaiList.length > 0 ? odaiList[0] : "お題がありません");
+
+    function saveAll() {
+      localStorage.setItem('odaiList', JSON.stringify(odaiList));
+      localStorage.setItem('bokeList', JSON.stringify(bokeList));
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      localStorage.setItem('users', JSON.stringify(users));
+      localStorage.setItem('currentOdai', currentOdai);
+    }
+
+ function renderLikeRanking() {
+  const container = document.getElementById('likeRankingContainer');
+  container.innerHTML = '<h3>いいねランキング</h3>';
+
+  // ユーザーごとのいいね数集計オブジェクトを作る
+  const likeCounts = {};
+
+  bokeList.forEach(b => {
+    if (!b.user) return;  // ユーザー名なければスキップ（念のため）
+    if (!likeCounts[b.user]) {
+      likeCounts[b.user] = { id: b.userId, count: 0 };
+    }
+    likeCounts[b.user].count += b.likes.length || 0;  // likes配列の長さを加算
+  });
+
+  // 集計結果を配列に変換し、いいね数で降順ソート
+  const rankingArray = Object.entries(likeCounts)
+    .map(([username, data]) => ({
+      username,
+      id: data.id,
+      likes: data.count
+    }))
+    .sort((a, b) => b.likes - a.likes);
+
+  if (rankingArray.length === 0) {
+    container.innerHTML += '<p>まだいいねがありません。</p>';
+    return;
+  }
+
+  // ランキング表示
+  rankingArray.forEach((user, index) => {
+    const div = document.createElement('div');
+    div.textContent = `${index + 1}位: ${user.username}（ID: ${user.id}） - いいね数: ${user.likes}`;
+    container.appendChild(div);
+  });
+}
+
+
+    function updateUI() {
+  document.getElementById('odaiDisplay').textContent = `お題：${currentOdai}`;
+
+  const userDisplay = document.getElementById('current-user');
+  if (currentUser) {
+    // そのユーザーのボケに付いたいいね数を合計
+   const likeCount = bokeList
+  .filter(b => b.userId === currentUser.id)
+  .reduce((sum, b) => sum + (b.likes ? b.likes.length : 0), 0);
+
+
+    userDisplay.innerHTML = `
+      現在ログイン中: ${currentUser.username}（ID: ${currentUser.id}）<br>
+      👍 合計いいね数: ${likeCount}
+    `;
+  } else {
+    userDisplay.textContent = `ログインしていません（ゲスト）`;
+  }
+
+  renderBokes();
+  renderAdminTools();
+  renderOdaiSelect();
+  renderLikeRanking();
+}
+
+    function showRandomOdai() {
+      currentOdai = odaiList[Math.floor(Math.random() * odaiList.length)];
+      saveAll();
+      updateUI();
+    }
+
+    function addOdai() {
+      const input = document.getElementById('newOdaiInput');
+      const odai = input.value.trim();
+      if (odai && !odaiList.includes(odai)) {
+        odaiList.push(odai);
+        input.value = '';
+        saveAll();
+        updateUI();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+  const menuToggle = document.getElementById('menuToggle');
+  const dropdown = document.querySelector('.dropdown-content');
+
+  menuToggle.addEventListener('click', function (event) {
+    event.stopPropagation(); // 他のイベントと干渉しないように
+    dropdown.style.display = (dropdown.style.display === 'block') ? 'none' : 'block';
+  });
+
+  // ドロップダウン外をクリックしたら非表示
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('.dropdown')) {
+      dropdown.style.display = 'none';
+    }
+  });
+});
+    function addBoke() {
+  const input = document.getElementById('bokeInput');
+  const boke = input.value.trim();
+  if (!currentUser) return alert("ログインしてください");
+  if (boke) {
+    bokeList.push({
+      odai: currentOdai,
+      boke,
+      user: currentUser.username,
+      userId: currentUser.id, 
+      likes: []
+    });
+    input.value = '';
+    saveAll();
+    updateUI();
+  }
+}
+    function renderBokes() {
+  const container = document.getElementById('bokeListContainer');
+  container.innerHTML = "<h3>投稿されたボケ：</h3>";
+  bokeList.filter(b => b.odai === currentOdai).forEach((b, i) => {
+    const div = document.createElement('div');
+    div.className = "boke";
+    div.innerHTML = `<div>${b.boke}</div><div class="meta">投稿者: ${b.user}</div>`;
+
+    // いいねボタン
+    const likeBtn = document.createElement('span');
+    likeBtn.className = "like-button";
+    likeBtn.innerHTML = b.likes.length + " ❤️";
+   if (currentUser && b.likes.includes(currentUser.username)) {
+      likeBtn.classList.add('liked');
+    }
+    likeBtn.onclick = () => {
+      if (!currentUser) return alert("ログインしてください");
+      const idx = b.likes.indexOf(currentUser.username);
+      if (idx > -1) {
+        b.likes.splice(idx, 1);
+      } else {
+        b.likes.push(currentUser.username);
+      }
+      saveAll();
+      updateUI();
+    };
+    div.appendChild(likeBtn);
+
+    // 削除ボタン（自分の投稿または管理人なら表示）
+if (currentUser && (b.userId === currentUser.id || currentUser.id === 1)) {
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = '削除';
+  deleteBtn.style.marginLeft = '10px';
+  deleteBtn.onclick = () => {
+    if (confirm("このボケを削除しますか？")) {
+      bokeList = bokeList.filter((_, idx) => idx !== bokeList.indexOf(b));
+      saveAll();
+      updateUI();
+    }
+  };
+  div.appendChild(deleteBtn);
+}
+    container.appendChild(div);
+  });
+}
+ function renderOdaiList() {
+if (!(currentUser && currentUser.id === 1)) return;
+ const container = document.getElementById('odaiListContainer');
+  container.innerHTML = "<h3>登録されたお題：</h3>";
+  odaiList.forEach((odai, index) => {
+    const div = document.createElement('div');
+    div.textContent = odai;
+
+
+    // 管理人だけに削除ボタンを表示
+    if (currentUser && currentUser.id === 1) {
+       const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '削除';
+      deleteBtn.style.marginLeft = '10px';
+      deleteBtn.onclick = () => {
+        if (confirm("このお題を削除しますか？")) {
+          odaiList.splice(index, 1);
+
+          // 関連するボケも削除
+          bokeList = bokeList.filter(b => b.odai !== odai);
+
+          // 現在のお題が消された場合、別のお題に変更
+          if (currentOdai === odai) {
+            currentOdai = odaiList[0] || "お題がありません";
+          }
+
+          saveAll();
+          updateUI();
+        }
+      };
+      div.appendChild(deleteBtn);
+    }
+
+    container.appendChild(div);
+  });
+}
+
+
+       function renderAdminTools() {
+  const tools = document.getElementById('adminTools');
+  const list = document.getElementById('adminOdaiList');
+
+  if (currentUser && currentUser.id === 1) {
+    tools.style.display = 'block';
+    list.innerHTML = '';
+    odaiList.forEach((odai, index) => {
+      const div = document.createElement('div');
+      div.textContent = odai;
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '削除';
+      deleteBtn.onclick = () => {
+        if (confirm("このお題を削除しますか？")) {
+          odaiList.splice(index, 1);
+          bokeList = bokeList.filter(b => b.odai !== odai);
+          if (currentOdai === odai) {
+            currentOdai = odaiList[0] || "お題がありません";
+          }
+          saveAll();
+          updateUI();
+        }
+      };
+
+      div.appendChild(deleteBtn);
+      list.appendChild(div);
+    });
+  } else {
+    tools.style.display = 'none';
+  }
+}
+
+
+    function openLoginModal() {
+      document.getElementById('loginModal').style.display = 'block';
+    }
+
+    function switchToRegister() {
+      document.getElementById('loginModal').style.display = 'none';
+      document.getElementById('registerModal').style.display = 'block';
+    }
+
+    function switchToLogin() {
+      document.getElementById('registerModal').style.display = 'none';
+      document.getElementById('loginModal').style.display = 'block';
+    }
+
+    function login() {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      const user = users.find(u => u.username === username && u.password === password);
+      if (user) {
+        currentUser = user;
+        saveAll();
+        document.getElementById('loginModal').style.display = 'none';
+        updateUI();
+      } else {
+        alert("ログイン失敗");
+      }
+    }
+   function renderOdaiSelect() {
+  const select = document.getElementById('odaiSelect');
+  select.innerHTML = '';
+  odaiList.forEach((odai) => {
+    const option = document.createElement('option');
+    option.value = odai;
+    option.textContent = odai;
+    if (odai === currentOdai) {
+      option.selected = true;
+    }
+    select.appendChild(option);
+  });
+}
+
+function changeOdai() {
+  const select = document.getElementById('odaiSelect');
+  currentOdai = select.value;
+  saveAll();
+  updateUI();
+}
+   function register() {
+  const username = document.getElementById('registerUsername').value.trim();
+  const password = document.getElementById('registerPassword').value.trim();
+
+  if (username && password && !users.find(u => u.username === username)) {
+    const newUser = {
+      id: users.length + 1,  // ← 登録順にIDを1から割り振る
+      username,
+      password
+    };
+    users.push(newUser);
+    currentUser = newUser;
+    saveAll();
+    document.getElementById('registerModal').style.display = 'none';
+    updateUI();
+  } else {
+    alert("登録失敗");
+  }
+}
+
+function resetUsers() {
+  if (confirm("本当に全ユーザーを初期化しますか？")) {
+    localStorage.removeItem('users');
+    localStorage.removeItem('currentUser');
+    alert("ユーザー情報を初期化しました。ページを再読み込みしてください。");
+  }
+}
+
+    function logout() {
+      currentUser = null;
+      saveAll();
+      updateUI();
+    }
+
+    // 初期化
+    updateUI();
+  </script>
+</body>
+</html>
